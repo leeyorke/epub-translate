@@ -7,46 +7,44 @@
 </div>
 
 ----
-<div align="center">
 
-[![GitHub License](https://img.shields.io/github/license/SpaceShaman/epub-translate)](https://github.com/SpaceShaman/epub-translate?tab=MIT-1-ov-file)
-[![Tests](https://img.shields.io/github/actions/workflow/status/SpaceShaman/epub-translate/release.yml?label=tests)](https://app.codecov.io/github/SpaceShaman/epub-translate)
-[![Codecov](https://img.shields.io/codecov/c/github/SpaceShaman/epub-translate)](https://app.codecov.io/github/SpaceShaman/epub-translate)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/epub-translate)](https://pypi.org/project/epub-translate)
-[![PyPI - Version](https://img.shields.io/pypi/v/epub-translate)](https://pypi.org/project/epub-translate)
-[![Typer](https://img.shields.io/badge/cli-Typer-blue?logo=typer&logoColor=blue)](https://typer.tiangolo.com/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
-[![Linting: Ruff](https://img.shields.io/badge/linting-Ruff-black?logo=ruff&logoColor=black)](https://github.com/astral-sh/ruff)
-[![Pytest](https://img.shields.io/badge/testing-Pytest-red?logo=pytest&logoColor=red)](https://docs.pytest.org/)
+## Introduction
 
-</div>
+Translating a book takes about 10 minutes.
 
-## Installation
+## develop
 
-You can install `epub-translate` using pip:
+Use UV to develop this project.
+
+### create a venv
 
 ```bash
-pip install epub-translate
+uv venv
 ```
 
-## Usage
-
-You can use `epub-translate` from the command line:
+### editable mode
 
 ```bash
-epub-translate translate <input_file> <output_language>
+uv pip install -e .
 ```
 
-## Configuration
-
-Before you can use `epub-translate`, you need to configure it with your OpenAI API key. You can do this using the following command:
-
+### Usage
 ```bash
-epub-translate configure --api-key <your_openai_api_key>
+(epub-translate) ~$ epub-translate --help
+[*^_^*] EbookLib patch applied successfully - head tags will now be preserved!
+
+ Usage: epub-translate [OPTIONS] COMMAND [ARGS]...
+
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.                                                                                  │
+│ --show-completion             Show completion for the current shell, to copy it or customize the installation.                                           │
+│ --help                        Show this message and exit.                                                                                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ translate                                                                                                                                                │
+│ configure                                                                                                                                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-You can also set the specific model you want to use for translation:
-
-```bash
-epub-translate configure --model <your_model_name>
-```
+## Reference
+Forked from https://github.com/SpaceShaman/epub-translate

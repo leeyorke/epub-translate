@@ -5,8 +5,9 @@ from pathlib import Path
 
 @dataclass
 class Config:
+    base_url: str = ""
     api_key: str = ""
-    model: str = "gpt-4o"
+    model: str = ""
 
 
 def get_config() -> Config:
@@ -15,27 +16,24 @@ def get_config() -> Config:
     if config_path.exists():
         config.read(config_path)
     else:
-        config["OpenAI"] = {"api_key": "", "model": "gpt-4o"}
-        with config_path.open("w") as config_file:
-            config.write(config_file)
+        raise RuntimeError("You need to configure model first.")
+
     return Config(
+        base_url=config.get("OpenAI", "base_url", fallback=""),
         api_key=config.get("OpenAI", "api_key", fallback=""),
-        model=config.get("OpenAI", "model", fallback="gpt-4o"),
+        model=config.get("OpenAI", "model", fallback=""),
     )
 
 
-def set_config(api_key: str | None = None, model: str | None = None) -> None:
+def set_config(base_url: str, api_key: str, model: str) -> None:
     config_path = Path.home() / ".epub_translate_config"
     config = ConfigParser()
     if config_path.exists():
         config.read(config_path)
-    else:
-        config["OpenAI"] = {"api_key": "", "model": "gpt-4o"}
-
-    if api_key is not None:
-        config["OpenAI"]["api_key"] = api_key
-    if model is not None:
-        config["OpenAI"]["model"] = model
+    config["OpenAI"]["base_url"] = base_url
+    config["OpenAI"]["api_key"] = api_key
+    config["OpenAI"]["model"] = model
 
     with config_path.open("w") as config_file:
         config.write(config_file)
+    print("The AI model configure succeseul!")

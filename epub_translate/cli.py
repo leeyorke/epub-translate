@@ -16,25 +16,36 @@ def translate(
         str,
         Argument(help="Target language code for translation, e.g., 'pl' for Polish."),
     ],
+    debug: Annotated[
+        bool,
+        Option(help="open debug mode.", show_default=False),
+    ] = False,
 ) -> None:
-    translate_epub(file_path, target_language)
+    translate_epub(file_path, target_language, debug)
 
 
 @app.command()
 def configure(
+    base_url: Annotated[
+        str,
+        Option(
+            help="API base url to use for translation.",
+            show_default=False,
+        ),
+    ],
     api_key: Annotated[
-        str | None,
+        str,
         Option(
-            help="OpenAI API key to use for translation. If not provided, the default config will be used.",
+            help="API key to use for translation.",
             show_default=False,
         ),
-    ] = None,
+    ],
     model: Annotated[
-        str | None,
+        str,
         Option(
-            help="OpenAI model to use for translation. Default is 'gpt-4o'.",
+            help="model to use for translation.",
             show_default=False,
         ),
-    ] = None,
+    ],
 ) -> None:
-    set_config(api_key, model)
+    set_config(base_url, api_key, model)
