@@ -4,22 +4,12 @@ import threading
 import time
 
 from ebooklib import ITEM_DOCUMENT, epub
-from openai import OpenAI
 
-from .config import get_config
 from .patched_ebooklib import apply_epub_patch
-from .settings import (
-    DEBUG_MODE,
-    INPUT_MAX_TOKENS,
-    MAX_LOOP_COUNT,
-    MAX_NUM_THREADS,
-    OUTPUT_MAX_TOKENS,
-    TIMEOUT,
-)
-from .utils import ProgressBar, print_done, printer_thread, safe_print
+from .settings import DEBUG_MODE, INPUT_MAX_TOKENS, MAX_NUM_THREADS, PROMPT
+from .utils import CONFIG, ProgressBar, call_ai, print_done, printer_thread, safe_print
 
 apply_epub_patch()
-CONFIG = get_config()
 
 
 class TranslateResponse:
@@ -116,20 +106,16 @@ def _translate_chapter(
         for extracted_content in extracted_content_list:
             progress.bar.update(task_id, advance=1)
             time.sleep(2)
-            for count in range(MAX_LOOP_COUNT):
-                translated_resp = _translate_text(
-                    extracted_content,
-                    source_language,
-                    target_language,
-                )
+            translated_resp = _translate_text(
+                extracted_content,
+                source_language,
+                target_language,
+            )
 
-                if translated_resp.is_translated:
-                    break
-                else:
-                    safe_print(
-                        f"[(>_<)] [{chapter_idx:02}] Maybe Timeout! tried-{count + 1}! code: {translated_resp.status_code}"
-                    )
-                    time.sleep(5)
+            if not translated_resp.is_translated:
+                translated_resp.data = extracted_content
+                safe_print("(>_<): Translation failed, retaining the original content.")
+
             translated_contents += translated_resp.data
 
     return _replace_body_content(chapter_content, translated_contents).encode()
@@ -144,28 +130,21 @@ def _extract_body_content(text: str):
     extracted_content_byte_count = _size_of_string(extracted_content)
     storage = Storage(extracted_content_part="")
     split_content_list = []
-    idx = 0
 
     if extracted_content_byte_count >= INPUT_MAX_TOKENS:
-        # safe_print(
-        #     f"[*^_^*] The extracted_content size more than {INPUT_MAX_TOKENS} bytes, do split!"
-        # )
-        extracted_content_list = extracted_content.split("\n")
+        # 将body内的text按行切分，成列表
+        extracted_content_list = extracted_content.split("\r\n")
 
         for line in extracted_content_list:
             if _size_of_string(storage.extracted_content_part) >= INPUT_MAX_TOKENS:
                 split_content_list.append(storage.extracted_content_part)
-                idx += 1
-                # safe_print(f"[*^_^*] Part {idx} split finished！")
                 storage.extracted_content_part = ""
-            else:
-                storage.extracted_content_part += line
-                extracted_content = storage.extracted_content_part
+            storage.extracted_content_part += f"{line}\r\n"
+            # extracted_content = storage.extracted_content_part
 
         if len(storage.extracted_content_part) > 0:
             split_content_list.append(storage.extracted_content_part)
             storage.extracted_content_part = ""
-            idx = 0
     else:
         split_content_list.append(extracted_content)
 
@@ -188,41 +167,23 @@ def _translate_text(
     if DEBUG_MODE:
         return TranslateResponse(True, 0, f"<h1>debug mode test.</h1>{text[:100]}\n")
 
-    prompt = (
-        "You are a book translator specialized in translating "
-        "HTML content while preserving the structure and tags. "
-        "Translate only the inner text of the HTML, keeping all tags intact. "
-        "Ensure the translation is accurate and contextually appropriate."
-        f"Translate from {source_language} to {target_language}."
-    )
-
-    client = OpenAI(base_url=CONFIG.base_url, api_key=CONFIG.api_key)
-
     try:
-        response = client.chat.completions.create(
-            model=CONFIG.model,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": f"{text}"},
-            ],
-            stream=False,
-            temperature=0.0,
-            max_tokens=OUTPUT_MAX_TOKENS,
-            timeout=TIMEOUT,
+        content = call_ai(
+            text,
+            PROMPT.format(
+                source_language=source_language, target_language=target_language
+            ),
         )
-    except Exception as err:
-        return TranslateResponse(False, 1, str(err))
-    else:
-        if not response:
-            safe_print("[(>_<)] response is null!")
-            return TranslateResponse(False, 1, "(>_<): response is null!")
-        elif not response.choices[0].message.content:
-            safe_print("[(>_<)] response content is null!")
-            return TranslateResponse(False, 1, "(>_<): response content is null!")
-        else:
-            return TranslateResponse(
-                True, 0, _normalize_translation(response.choices[0].message.content)
-            )
+        return TranslateResponse(
+            True,
+            0,
+            _normalize_translation(content),  # type: ignore
+        )
+    except Exception as e:
+        safe_print(
+            f"(>_<): Error found! No translation will be provided.\n{type(e).__name__}"
+        )
+        return TranslateResponse(False, 1, "")
 
 
 def _normalize_translation(text: str) -> str:

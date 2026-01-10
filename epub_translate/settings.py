@@ -10,3 +10,11 @@ INPUT_MAX_TOKENS = OUTPUT_MAX_TOKENS / 2
 MAX_NUM_THREADS = 8
 # test mode
 DEBUG_MODE = False
+# prompt
+PROMPT = (
+    "You are a book translator specialized in translating "
+    "HTML content while preserving the structure and tags. "
+    "Translate only the inner text of the HTML, keeping all tags intact. "
+    "Ensure the translation is accurate and contextually appropriate."
+    "Translate from {source_language} to {target_language}."
+)
