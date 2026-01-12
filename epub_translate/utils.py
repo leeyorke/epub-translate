@@ -3,7 +3,13 @@ import threading
 import time
 from functools import wraps
 
-from openai import APIConnectionError, APITimeoutError, OpenAI, RateLimitError
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    InternalServerError,
+    OpenAI,
+    RateLimitError,
+)
 from rich.console import Console
 from rich.live import Live
 from rich.progress import Progress, TimeElapsedColumn, TimeRemainingColumn
@@ -65,11 +71,16 @@ def retry(max_retries=5, base_delay=1):
                 try:
                     return func(*args, **kwargs)
 
-                except (RateLimitError, APITimeoutError, APIConnectionError) as e:
+                except (
+                    RateLimitError,
+                    APITimeoutError,
+                    APIConnectionError,
+                    InternalServerError,
+                ) as e:
                     last_error = e
                     safe_print(
-                        f"(>_<): retryable error {type(e).__name__},\n"
-                        f"(>_<): retry {attempt}/{max_retries}"
+                        f"[(>_<)] retryable error {type(e).__name__},\n"
+                        f"[(>_<)] retry {attempt}/{max_retries}"
                     )
                     time.sleep(base_delay * (2 ** (attempt - 1)))
 
@@ -105,5 +116,5 @@ def call_ai(text: str, prompt: str):
     )
 
     if not content:
-        raise ValueError("(>_<): Client response is empty!")
+        raise ValueError("[(>_<)] Client response is empty!")
     return content
